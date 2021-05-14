@@ -13,9 +13,20 @@ app.post('/send', (request, response)=>{
     response.json({});
 });
 app.get('/get', (request, response)=>{
-    response.json({messages});
-})
-function store_message(message, time) {
-    messages.push({message, time});
-    console.log(messages);
+    const start = parseInt(request.query.start);
+    const end = ((start + PAGE_LIMIT) >= messages.length)? -1:(start+PAGE_LIMIT);
+    response.json({
+        messages: get_message(start),
+        n_messages: messages.length,
+        start: start,
+        end: end
+    });
+});
+
+const get_message = (start)=>{
+    const PAGE_LIMIT = 5;
+    return messages.slice(start, PAGE_LIMIT + start);
+}
+const store_message = (message, time)=>{
+    messages.unshift({message, time});
 }
