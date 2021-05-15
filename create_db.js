@@ -5,10 +5,12 @@ let db = new sqlite3.Database('./simple_forum.db', (err)=>{
 })
 
 // create table
-db.run(`CREATE TABLE Messages(
-    message text
+db.run(`CREATE TABLE messages(
+    ID INTEGER PRIMARY KEY NOT NULL,
+    message text NOT NULL,
+    time INTEGER NOT NULL
 )`);
 db.close((err)=>{
-    if(err) throw err;
+    if(err) console.log(err.name);
     console.log('close connection');
 });
