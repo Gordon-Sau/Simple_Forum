@@ -1,7 +1,7 @@
 const express = require('express');
-const sqlite = require('sqlite3').verbose();
+const sqlite3 = require('sqlite3').verbose();
 const app = express();
-app.listen(8080, ()=>{
+app.listen(3000, ()=>{
     console.log('start!');
 });
 app.use(express.static('public'));
@@ -12,28 +12,61 @@ let db = new sqlite3.Database('./simple_forum.db', (err)=>{
     console.log('Connected');
 });
 
-const messages = [];
 const PAGE_LIMIT = 5;
 
 app.post('/send', (request, response)=>{
-    const {message} = request.body
-    store_message(message, Date.now());
-    response.json({});
+    const {message} = request.body;
+    store_message(message, Date.now()).then(()=>{response.json({});});
 });
+
 app.get('/get', (request, response)=>{
     const start = parseInt(request.query.start);
-    const end = ((start + PAGE_LIMIT) >= messages.length)? -1:(start+PAGE_LIMIT);
-    response.json({
-        messages: get_message(start),
-        n_messages: messages.length,
-        start: start,
-        end: end
+    get_message(start).then(ret=>{
+        response.json(ret);
     });
 });
 
-const get_message = (start)=>{
-    return messages.slice(start, PAGE_LIMIT + start);
+const get_message = async (start)=>{
+    let end = start + PAGE_LIMIT;
+    const messages = await query_messages(start, end);
+    const n_messages = await query_count_messages();
+    if (end >= n_messages) {
+        end = -1;
+    }
+    return {
+        messages,
+        n_messages,
+        start,
+        end
+    };
 }
+
+const query_messages = (start, end)=>{
+    return new Promise((resolve, reject)=> {
+        db.all("select message, time from (select row_number() over (order by time desc) rownum, * from messages) t where rownum between ? and ?;", [start + 1, end], (err, messages)=>{
+            if (err) reject(err);
+            resolve(messages);
+        });
+    });
+}
+
+const query_count_messages = ()=>{
+    return new Promise((resolve, reject)=>{
+        db.get("select count(*) from messages", (err, row)=>{
+            if (err) reject(err);
+            resolve(row['count(*)']);
+        });
+    });
+}
+
 const store_message = (message, time)=>{
-    messages.unshift({message, time});
+    return new Promise((resolve, reject)=>{
+        db.run(`INSERT INTO messages(message, time) VALUES (?, ?)`, [message, time], (err)=>{
+            if (err) {
+                reject(err);
+            } else {
+                resolve();
+            }
+        });
+    });
 }
