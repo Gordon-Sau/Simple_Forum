@@ -1,15 +1,16 @@
 const send = document.getElementById('send');
+const message_element = document.getElementById('message');
 send.addEventListener("click", (e)=>{
-    if (document.getElementById('message').value.trim() != '') {
+    if (message_element.value.trim() != '') {
         fetch('/send', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({message: document.getElementById('message').value})
+            body: JSON.stringify({message: message_element.value})
         }).then(response=>{
             if (response.status === 200) {
-                document.getElementById('message').value = '';
+                message_element.value = '';
             }
             page_event(parseInt(document.getElementById('current page').innerHTML));
         });
@@ -19,12 +20,14 @@ send.addEventListener("click", (e)=>{
 const page_event = (page)=>{
     const PAGE_LIMIT = 5;
     get_messages_from((page -1) * PAGE_LIMIT).then(async resp=>{
+        console.log(resp.status);
         if (resp.status === 200) {
             const {messages, n_messages, start, end} = await resp.json();
-            console.log({messages, n_messages, start, end});
             const button_list = [];
             const n_pages = Math.ceil(n_messages/PAGE_LIMIT);
-            for (let i = 1; i <= n_pages; i++) {
+            let min_page = Math.max(1, page - 3);
+            let max_page = Math.min(page + 3, n_pages);
+            for (let i = min_page; i <= max_page; i++) {
                 let button = document.createElement("button");
                 button.className = "page";
                 if (i === page) {
@@ -56,6 +59,15 @@ const page_event = (page)=>{
                 next_button.addEventListener("click", ()=>{page_event(page + 1);});
                 button_list.push(next_button);
             }
+            
+            const select_button = document.createElement("select");
+            select_button.append(...create_page_options(page, n_pages));
+            select_button.id = "select page";
+            select_button.addEventListener("change", ()=>{
+                page_event(parseInt(select_button.value));
+            });
+            button_list.push(select_button);
+
             document.getElementById("pagination").innerHTML = '';
             document.getElementById("pagination").append(...button_list);
             document.getElementById("messages").innerHTML = '';
@@ -73,7 +85,6 @@ const get_messages_from = (start)=>{
         method: 'GET',
     })
 }
-page_event(1);
 const get_messages_loop = ()=> {
     setTimeout(() => {
         page_event(parseInt(document.getElementById('current page').innerHTML));
@@ -83,4 +94,19 @@ const get_messages_loop = ()=> {
 const current_page = ()=> {
     parseInt(document.getElementById('current page').innerHTML);
 }
+
+const create_page_options = (curr_page, n_pages)=>{
+    option_list = [];
+    for (let page = 1; page <= Math.max(n_pages, 1); page++){
+        let option = document.createElement("option");
+        option.innerText = `page ${page}`;
+        if (page === curr_page) {
+            option.setAttribute("selected", "true");
+        }
+        option.value = page;
+        option_list.push(option);
+    }
+    return option_list;
+}
+page_event(1);
 get_messages_loop();
