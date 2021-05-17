@@ -32,47 +32,78 @@ function send_message(){
             if (response.status === 200) {
                 message_element.value = '';
             }
-            page_event(parseInt(document.getElementById('current page').innerHTML));
+            page_event(parseInt(document.getElementById('current page').innerText));
         });
     }
 }
-function update_page_buttons(page, n_pages){
-    const button_list = [];
-    let min_page = Math.max(1, page - 3);
-    let max_page = Math.min(page + 3, n_pages);
-    for (let i = min_page; i <= max_page; i++) {
-        let button = document.createElement("button");
-        button.className = "page";
-        if (i === page) {
-            button.id = "current page";
-        };
-        button.innerHTML = i;
-        button.addEventListener("click", ()=>{page_event(i);});
-        button_list.push(button);
+
+function create_page_button(id, className, innerHTML, innerText, event_type, event_func){
+    const button = document.createElement("button");
+    if (id !== null){
+        button.id = id;
     }
+    if (className !== null){
+        button.className = className;
+    }
+    if (innerText !== null) {
+        button.innerText = innerText;
+    }
+    if (innerHTML !== null) {
+        button.innerHTML = innerHTML;
+    }
+    if (event_type !== null){
+        button.addEventListener(event_type, event_func);
+    }
+    return button;
+}
+
+function page_button_list(page, n_pages) {
+let page_list = [];
+    let min_page = Math.max(1, page - 2);
+    let max_page = Math.min(page + 2, n_pages);
+    for (let i = min_page; i <= max_page; i++) {
+        page_list.push(i);
+    }
+    if (min_page > 3){
+        page_list = ["1", "2", "..."].concat(page_list);
+    } else {
+        for (let i = min_page - 1; i >= 1; i--) {
+            page_list.unshift(i);
+        }
+    }
+    if (max_page < n_pages - 1) {
+        page_list.push("...");
+        for (let i = n_pages - 1; i <=n_pages; i++) {
+            page_list.push(i);
+        }
+    } else {
+        for (let i = max_page + 1; i <= n_pages; i++) {
+            page_list.push(i);
+        }
+    }
+    return page_list;
+}
+
+function update_page_buttons(page, n_pages){
+    const page_list = page_button_list(page, n_pages);
+    const button_list = page_list.map(value=>{
+        if (value == "...") {
+            return create_page_button(null, null, null, value, null, null);
+        } else if (value === page) {
+            return create_page_button("current page","page", null, value, "click", ()=>{page_event(value);});
+        }
+        return create_page_button(null, "page", null, value, "click", ()=>{page_event(value);});
+    })
     if (n_pages === 0) {
-        let button = document.createElement("button");
-        button.className = "page";
-        button.id = "current page";
-        button.innerHTML = 1;
-        button.addEventListener("click", ()=>{page_event(1);});
-        button_list.push(button);
+        button_list.push(create_page_button("current page", "page", null, "1", "click", ()=>{page_event(1);}));
     }
     if (page !== 1) {
-        const prev_button = document.createElement("button");
-        prev_button.className = "prev button";
-        prev_button.innerHTML = "&laquo";
-        prev_button.addEventListener("click", ()=>{page_event(page - 1);});
-        button_list.unshift(prev_button);
+        button_list.unshift(create_page_button("prev button", null, "&laquo", null, "click", ()=>{page_event(page - 1);}));
     }
     if (page !== n_pages) {
-        const next_button = document.createElement("button");
-        next_button.className = "next button";
-        next_button.innerHTML = "&raquo";
-        next_button.addEventListener("click", ()=>{page_event(page + 1);});
-        button_list.push(next_button);
+        button_list.push(create_page_button("next button", null, "&raquo", null, "click", ()=>{page_event(page + 1);}));
     }
-    
+
     const select_button = document.createElement("select");
     select_button.append(...create_page_options(page, n_pages));
     select_button.id = "select page";
@@ -101,12 +132,12 @@ function get_messages_from(start){
 }
 const get_messages_loop = ()=> {
     setTimeout(() => {
-        page_event(parseInt(document.getElementById('current page').innerHTML));
+        page_event(current_page());
         get_messages_loop();
     }, 3000);
 }
 function current_page() {
-    parseInt(document.getElementById('current page').innerHTML);
+    return parseInt(document.getElementById('current page').innerText);
 }
 
 function create_page_options(curr_page, n_pages){
