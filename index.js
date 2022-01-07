@@ -1,7 +1,7 @@
 const express = require('express');
 const sqlite3 = require('sqlite3').verbose();
 const app = express();
-app.listen(3000, ()=>{
+app.listen(8080, ()=>{
     console.log('start!');
 });
 app.use(express.static('public'));

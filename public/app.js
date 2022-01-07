@@ -71,7 +71,7 @@ let page_list = [];
             page_list.unshift(i);
         }
     }
-    if (max_page < n_pages - 1) {
+    if (max_page < n_pages - 2) {
         page_list.push("...");
         for (let i = n_pages - 1; i <=n_pages; i++) {
             page_list.push(i);
